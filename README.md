@@ -1,174 +1,120 @@
---// Caio_hub - GUI Full Black Super Bonito (Super Jump 10 + ESP com Nick)
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 
--- Criar ScreenGui
-local gui = Instance.new("ScreenGui")
-gui.Name = "Caio_hub"
-gui.Parent = game:GetService("CoreGui")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
 
--- Frame principal
-local main = Instance.new("Frame")
-main.Size = UDim2.new(0, 200, 0, 150)
-main.Position = UDim2.new(0.5, -100, 0.5, -75)
-main.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-main.BorderSizePixel = 0
-main.Active = true
-main.Draggable = true
-main.Parent = gui
-
--- Arredondar
-local cornerMain = Instance.new("UICorner")
-cornerMain.CornerRadius = UDim.new(0, 15)
-cornerMain.Parent = main
-
--- Sombra
-local sombra = Instance.new("ImageLabel")
-sombra.Parent = main
-sombra.BackgroundTransparency = 1
-sombra.AnchorPoint = Vector2.new(0.5, 0.5)
-sombra.Position = UDim2.new(0.5, 0, 0.5, 0)
-sombra.Size = UDim2.new(1, 40, 1, 40)
-sombra.ZIndex = -1
-sombra.Image = "rbxassetid://1316045217"
-sombra.ImageColor3 = Color3.fromRGB(0, 0, 0)
-sombra.ImageTransparency = 0.4
-sombra.ScaleType = Enum.ScaleType.Slice
-sombra.SliceCenter = Rect.new(10, 10, 118, 118)
-
--- Título
-local titulo = Instance.new("TextLabel")
-titulo.Size = UDim2.new(1, 0, 0, 35)
-titulo.BackgroundTransparency = 1
-titulo.Text = "Caio_hub"
-titulo.Font = Enum.Font.GothamBold
-titulo.TextSize = 20
-titulo.TextColor3 = Color3.fromRGB(255, 255, 255)
-titulo.TextStrokeTransparency = 0.7
-titulo.Parent = main
-
--- Função botão estiloso
-local function criarBotao(nome, posY)
-    local botao = Instance.new("TextButton")
-    botao.Size = UDim2.new(1, -40, 0, 40)
-    botao.Position = UDim2.new(0, 20, 0, posY)
-    botao.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    botao.Text = nome
-    botao.Font = Enum.Font.GothamBold
-    botao.TextSize = 16
-    botao.TextColor3 = Color3.fromRGB(200, 200, 200)
-    botao.Parent = main
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
-    corner.Parent = botao
-
-    -- Hover efeito
-    botao.MouseEnter:Connect(function()
-        botao.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-        botao.TextColor3 = Color3.fromRGB(255, 255, 255)
-    end)
-
-    botao.MouseLeave:Connect(function()
-        botao.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-        botao.TextColor3 = Color3.fromRGB(200, 200, 200)
-    end)
-
-    return botao
+-- Função para setup do Character
+local function setupCharacter(char)
+    character = char
+    hrp = character:WaitForChild("HumanoidRootPart")
+    humanoid = char:WaitForChild("Humanoid")
 end
 
--- Criar botões
-local superJumpBtn = criarBotao("Super Jump (OFF)", 45)
-local espBtn = criarBotao("ESP Player (OFF)", 95)
+setupCharacter(character)
+player.CharacterAdded:Connect(setupCharacter)
 
--- SUPER JUMP (10 blocos)
-local superAtivo = false
-local normalJump = 50 -- padrão Roblox
+-- ======== GUI Full Black ========
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.Name = "CaioHubGui"
+screenGui.ResetOnSpawn = false
 
-superJumpBtn.MouseButton1Click:Connect(function()
-    local player = game.Players.LocalPlayer
-    local char = player.Character or player.CharacterAdded:Wait()
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0,200,0,100)
+mainFrame.Position = UDim2.new(0.5,-100,0.5,-50)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20,20,20) -- full black
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+mainFrame.Active = true
+mainFrame.Draggable = true
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0,15)
+corner.Parent = mainFrame
 
-    if humanoid then
-        if not superAtivo then
-            superAtivo = true
-            superJumpBtn.Text = "Super Jump (ON)"
-            humanoid.UseJumpPower = true
-            humanoid.JumpPower = 71 -- ~10 blocos
+-- Title
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,0,0,30)
+title.Position = UDim2.new(0,0,0,0)
+title.BackgroundTransparency = 1
+title.Text = "Caio_hub (1.0)"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.Parent = mainFrame
+
+-- Função para botão toggle estilizado
+local function createToggleButton(name, position)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0,160,0,35)
+    button.Position = position
+    button.Text = name.." : OFF"
+    button.Font = Enum.Font.GothamBold
+    button.TextSize = 16
+    button.TextColor3 = Color3.fromRGB(255,255,255)
+    button.BackgroundColor3 = Color3.fromRGB(50,50,50)
+    button.BorderSizePixel = 0
+    button.Parent = mainFrame
+
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0,10)
+    btnCorner.Parent = button
+
+    -- Hover
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(70,70,70)}):Play()
+    end)
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50,50,50)}):Play()
+    end)
+
+    local state = false
+    button.MouseButton1Click:Connect(function()
+        state = not state
+        if state then
+            button.Text = name.." : ON"
+            TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0,255,128)}):Play()
         else
-            superAtivo = false
-            superJumpBtn.Text = "Super Jump (OFF)"
-            humanoid.JumpPower = normalJump
+            button.Text = name.." : OFF"
+            TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50,50,50)}):Play()
+        end
+    end)
+
+    return button
+end
+
+-- ===== BOTÃO 3D Floor =====
+local floorButton = createToggleButton("3D Floor", UDim2.new(0,20,0,50))
+local floorActive = false
+local platform
+
+floorButton.MouseButton1Click:Connect(function()
+    floorActive = not floorActive
+    if floorActive then
+        if not platform and hrp then
+            platform = Instance.new("Part")
+            platform.Size = Vector3.new(10,1,10)
+            platform.Anchored = true
+            platform.Position = hrp.Position - Vector3.new(0,3,0)
+            platform.Color = Color3.fromRGB(50,50,50)
+            platform.Material = Enum.Material.Neon
+            platform.Parent = workspace
+        end
+    else
+        if platform then
+            platform:Destroy()
+            platform = nil
         end
     end
 end)
 
--- ESP PLAYER COM NICK
-local espAtivo = false
-local espConnections = {}
-
-local function criarESP(player)
-    if player.Character and player.Character:FindFirstChild("Head") then
-        -- Highlight
-        local highlight = Instance.new("Highlight")
-        highlight.Name = "CaioESP"
-        highlight.FillTransparency = 1
-        highlight.OutlineColor = Color3.fromRGB(0, 255, 0)
-        highlight.OutlineTransparency = 0
-        highlight.Parent = player.Character
-
-        -- Nome sobre a cabeça
-        local billboard = Instance.new("BillboardGui")
-        billboard.Name = "CaioNick"
-        billboard.Adornee = player.Character.Head
-        billboard.Size = UDim2.new(0, 100, 0, 30)
-        billboard.StudsOffset = Vector3.new(0, 2.5, 0)
-        billboard.AlwaysOnTop = true
-        billboard.Parent = player.Character
-
-        local text = Instance.new("TextLabel")
-        text.Size = UDim2.new(1, 0, 1, 0)
-        text.BackgroundTransparency = 1
-        text.Text = player.Name
-        text.TextColor3 = Color3.fromRGB(0, 255, 0)
-        text.TextStrokeTransparency = 0
-        text.Font = Enum.Font.GothamBold
-        text.TextScaled = true
-        text.Parent = billboard
-    end
-end
-
-local function removerESP(player)
-    if player.Character then
-        if player.Character:FindFirstChild("CaioESP") then
-            player.Character.CaioESP:Destroy()
-        end
-        if player.Character:FindFirstChild("CaioNick") then
-            player.Character.CaioNick:Destroy()
-        end
-    end
-end
-
-espBtn.MouseButton1Click:Connect(function()
-    espAtivo = not espAtivo
-    if espAtivo then
-        espBtn.Text = "ESP Player (ON)"
-        for _, p in pairs(game.Players:GetPlayers()) do
-            if p ~= game.Players.LocalPlayer then
-                criarESP(p)
-                espConnections[p] = p.CharacterAdded:Connect(function()
-                    task.wait(1)
-                    criarESP(p)
-                end)
-            end
-        end
-    else
-        espBtn.Text = "ESP Player (OFF)"
-        for _, p in pairs(game.Players:GetPlayers()) do
-            removerESP(p)
-            if espConnections[p] then
-                espConnections[p]:Disconnect()
-                espConnections[p] = nil
-            end
-        end
+-- Atualiza posição da plataforma rapidamente
+RunService.RenderStepped:Connect(function()
+    if floorActive and platform and hrp then
+        platform.Position = platform.Position:Lerp(hrp.Position - Vector3.new(0,3,0),0.2)
     end
 end)
