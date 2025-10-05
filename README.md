@@ -57,21 +57,32 @@ local floorBtn = createButton("3D Floor", 40)
 local flyBtn = createButton("Fly", 85)
 
 -----------------------------------------------
--- BOTÃO 1: 3D FLOOR (PLATAFORMA + RAIO-X PERMANENTE)
+-- BOTÃO 1: 3D FLOOR (PLATAFORMA + RAIO-X TEMPORÁRIO)
 -----------------------------------------------
 local floorActive = false
 local platform
-local xrayApplied = false
+
+local originalTransparencies = {}
+local originalFogEnd = Lighting.FogEnd
 
 local function applyXray()
-	if xrayApplied then return end
-	xrayApplied = true
 	for _, obj in ipairs(workspace:GetDescendants()) do
 		if obj:IsA("BasePart") then
+			originalTransparencies[obj] = obj.Transparency
 			obj.Transparency = math.clamp(obj.Transparency + 0.7,0,1)
 		end
 	end
 	Lighting.FogEnd = 999999
+end
+
+local function removeXray()
+	for obj, trans in pairs(originalTransparencies) do
+		if obj and obj.Parent then
+			obj.Transparency = trans
+		end
+	end
+	Lighting.FogEnd = originalFogEnd
+	originalTransparencies = {}
 end
 
 floorBtn.MouseButton1Click:Connect(function()
@@ -105,7 +116,7 @@ floorBtn.MouseButton1Click:Connect(function()
 			platform:Destroy()
 			platform = nil
 		end
-		-- Raio-X permanece
+		removeXray()
 	end
 end)
 
@@ -113,7 +124,7 @@ end)
 -- BOTÃO 2: FLY (DIREÇÃO DA CÂMERA)
 -----------------------------------------------
 local flying = false
-local flySpeed = 30
+local flySpeed = 25  -- VELOCIDADE ATUALIZADA
 
 flyBtn.MouseButton1Click:Connect(function()
 	flying = not flying
