@@ -1,162 +1,139 @@
--- Services
+-- // SERVIÇOS
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
-local humanoid = character:WaitForChild("Humanoid")
 
--- Função para setup do Character
-local function setupCharacter(char)
-    character = char
-    hrp = character:WaitForChild("HumanoidRootPart")
-    humanoid = char:WaitForChild("Humanoid")
-end
+player.CharacterAdded:Connect(function(char)
+	character = char
+	hrp = char:WaitForChild("HumanoidRootPart")
+end)
 
-setupCharacter(character)
-player.CharacterAdded:Connect(setupCharacter)
+-- // GUI
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.Name = "CaioHub"
+gui.ResetOnSpawn = false
 
--- ======== GUI Full Black ========
-local screenGui = Instance.new("ScreenGui")
-screenGui.Parent = player:WaitForChild("PlayerGui")
-screenGui.Name = "CaioHubGui"
-screenGui.ResetOnSpawn = false
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 200, 0, 150)
+frame.Position = UDim2.new(0.05, 0, 0.4, 0)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+frame.Active = true
+frame.Draggable = true
 
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0,200,0,150)
-mainFrame.Position = UDim2.new(0.5,-100,0.5,-75)
-mainFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
-mainFrame.BorderSizePixel = 0
-mainFrame.Parent = screenGui
-mainFrame.Active = true
-mainFrame.Draggable = true
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0,15)
-corner.Parent = mainFrame
+local uiCorner = Instance.new("UICorner", frame)
+uiCorner.CornerRadius = UDim.new(0, 12)
 
--- Title
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1,0,0,30)
-title.Position = UDim2.new(0,0,0,0)
+local title = Instance.new("TextLabel", frame)
+title.Text = "Caio Hub"
+title.Size = UDim2.new(1, 0, 0, 30)
 title.BackgroundTransparency = 1
-title.Text = "Caio_hub (1.0)"
+title.TextColor3 = Color3.fromRGB(255,255,255)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
-title.TextColor3 = Color3.fromRGB(255,255,255)
-title.Parent = mainFrame
 
--- Função para botão toggle estilizado
-local function createToggleButton(name, position)
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0,160,0,35)
-    button.Position = position
-    button.Text = name.." : OFF"
-    button.Font = Enum.Font.GothamBold
-    button.TextSize = 16
-    button.TextColor3 = Color3.fromRGB(255,255,255)
-    button.BackgroundColor3 = Color3.fromRGB(50,50,50)
-    button.BorderSizePixel = 0
-    button.Parent = mainFrame
-
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0,10)
-    btnCorner.Parent = button
-
-    -- Hover
-    button.MouseEnter:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(70,70,70)}):Play()
-    end)
-    button.MouseLeave:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50,50,50)}):Play()
-    end)
-
-    return button
+-- // BOTÃO CREATOR
+local function createButton(name, y)
+	local btn = Instance.new("TextButton", frame)
+	btn.Size = UDim2.new(0, 160, 0, 35)
+	btn.Position = UDim2.new(0, 20, 0, y)
+	btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+	btn.Text = name .. " : OFF"
+	btn.TextColor3 = Color3.fromRGB(255,255,255)
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 14
+	local corner = Instance.new("UICorner", btn)
+	corner.CornerRadius = UDim.new(0,8)
+	return btn
 end
 
--- ===== BOTÃO 3D Floor =====
-local floorButton = createToggleButton("3D Floor", UDim2.new(0,20,0,50))
+-- // BOTÕES
+local floorBtn = createButton("3D Floor", 40)
+local flyBtn = createButton("Fly", 85)
+
+-----------------------------------------------
+-- BOTÃO 1: 3D FLOOR (PLATAFORMA + RAIO-X PERMANENTE)
+-----------------------------------------------
 local floorActive = false
 local platform
+local xrayApplied = false
 
-floorButton.MouseButton1Click:Connect(function()
-    floorActive = not floorActive
-    if floorActive then
-        TweenService:Create(floorButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0,255,128)}):Play()
-        floorButton.Text = "3D Floor : ON"
-        if not platform and hrp then
-            platform = Instance.new("Part")
-            platform.Size = Vector3.new(10,1,10)
-            platform.Anchored = true
-            platform.Position = hrp.Position - Vector3.new(0,3,0)
-            platform.Color = Color3.fromRGB(50,50,50)
-            platform.Material = Enum.Material.Neon
-            platform.Parent = workspace
-        end
-    else
-        TweenService:Create(floorButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50,50,50)}):Play()
-        floorButton.Text = "3D Floor : OFF"
-        if platform then
-            platform:Destroy()
-            platform = nil
-        end
-    end
+local function applyXray()
+	if xrayApplied then return end
+	xrayApplied = true
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if obj:IsA("BasePart") then
+			obj.Transparency = math.clamp(obj.Transparency + 0.7,0,1)
+		end
+	end
+	Lighting.FogEnd = 999999
+end
+
+floorBtn.MouseButton1Click:Connect(function()
+	floorActive = not floorActive
+	if floorActive then
+		floorBtn.Text = "3D Floor : ON"
+		floorBtn.BackgroundColor3 = Color3.fromRGB(0,255,128)
+
+		applyXray()
+
+		if not platform then
+			platform = Instance.new("Part")
+			platform.Size = Vector3.new(20,1,20)
+			platform.Anchored = true
+			platform.Material = Enum.Material.Neon
+			platform.Color = Color3.fromRGB(80,80,80)
+			platform.Transparency = 0.3
+			platform.Name = "FloorPlatform"
+			platform.Parent = workspace
+		end
+
+		RunService.RenderStepped:Connect(function()
+			if platform and hrp and floorActive then
+				platform.CFrame = hrp.CFrame * CFrame.new(0,-4,0)
+			end
+		end)
+	else
+		floorBtn.Text = "3D Floor : OFF"
+		floorBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+		if platform then
+			platform:Destroy()
+			platform = nil
+		end
+		-- Raio-X permanece
+	end
 end)
 
--- Atualiza posição da plataforma
-RunService.RenderStepped:Connect(function()
-    if floorActive and platform and hrp then
-        platform.Position = platform.Position:Lerp(hrp.Position - Vector3.new(0,3,0),0.2)
-    end
-end)
-
--- ===== BOTÃO FLY TO BASE =====
-local flyButton = createToggleButton("Fly to Base", UDim2.new(0,20,0,95))
+-----------------------------------------------
+-- BOTÃO 2: FLY (DIREÇÃO DA CÂMERA)
+-----------------------------------------------
 local flying = false
-local moveDirection = Vector3.new(0,0,0)
-local flySpeed = 25
+local flySpeed = 30
 
--- Captura de teclas W/S
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if input.KeyCode == Enum.KeyCode.W then
-        moveDirection = Vector3.new(0,1,0)
-    elseif input.KeyCode == Enum.KeyCode.S then
-        moveDirection = Vector3.new(0,-1,0)
-    end
-end)
+flyBtn.MouseButton1Click:Connect(function()
+	flying = not flying
+	if flying then
+		flyBtn.Text = "Fly : ON"
+		flyBtn.BackgroundColor3 = Color3.fromRGB(0,255,128)
 
-UserInputService.InputEnded:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.W or input.KeyCode == Enum.KeyCode.S then
-        moveDirection = Vector3.new(0,0,0)
-    end
-end)
-
-flyButton.MouseButton1Click:Connect(function()
-    flying = not flying
-    if flying then
-        flyButton.Text = "Fly to Base : ON"
-        TweenService:Create(flyButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0,255,128)}):Play()
-        RunService:BindToRenderStep("FlyStep", Enum.RenderPriority.Camera.Value + 1, function()
-            if hrp and workspace.CurrentCamera then
-                local cam = workspace.CurrentCamera
-                local look = cam.CFrame.LookVector
-                local direction = (look + moveDirection)
-                if direction.Magnitude > 0 then
-                    hrp.Velocity = direction.Unit * flySpeed
-                else
-                    hrp.Velocity = Vector3.new(0,0,0)
-                end
-            end
-        end)
-    else
-        flyButton.Text = "Fly to Base : OFF"
-        TweenService:Create(flyButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50,50,50)}):Play()
-        RunService:UnbindFromRenderStep("FlyStep")
-        if hrp then
-            hrp.Velocity = Vector3.new(0,0,0)
-        end
-    end
+		RunService:BindToRenderStep("FlyCam", Enum.RenderPriority.Camera.Value + 1, function()
+			if hrp and workspace.CurrentCamera then
+				local cam = workspace.CurrentCamera
+				local dir = cam.CFrame.LookVector
+				if dir.Magnitude > 0 then
+					hrp.Velocity = dir.Unit * flySpeed
+				end
+			end
+		end)
+	else
+		flyBtn.Text = "Fly : OFF"
+		flyBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+		RunService:UnbindFromRenderStep("FlyCam")
+		if hrp then hrp.Velocity = Vector3.zero end
+	end
 end)
