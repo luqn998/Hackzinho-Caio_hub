@@ -116,7 +116,7 @@ end)
 local flyButton = createToggleButton("Fly to Base", UDim2.new(0,20,0,95))
 local flying = false
 local moveDirection = Vector3.new(0,0,0)
-local flySpeed = 27
+local flySpeed = 25
 
 -- Captura de teclas W/S
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
