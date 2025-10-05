@@ -2,6 +2,7 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
@@ -25,9 +26,9 @@ screenGui.Name = "CaioHubGui"
 screenGui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0,200,0,100)
-mainFrame.Position = UDim2.new(0.5,-100,0.5,-50)
-mainFrame.BackgroundColor3 = Color3.fromRGB(20,20,20) -- full black
+mainFrame.Size = UDim2.new(0,200,0,150)
+mainFrame.Position = UDim2.new(0.5,-100,0.5,-75)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 mainFrame.Active = true
@@ -72,18 +73,6 @@ local function createToggleButton(name, position)
         TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50,50,50)}):Play()
     end)
 
-    local state = false
-    button.MouseButton1Click:Connect(function()
-        state = not state
-        if state then
-            button.Text = name.." : ON"
-            TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0,255,128)}):Play()
-        else
-            button.Text = name.." : OFF"
-            TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50,50,50)}):Play()
-        end
-    end)
-
     return button
 end
 
@@ -95,6 +84,8 @@ local platform
 floorButton.MouseButton1Click:Connect(function()
     floorActive = not floorActive
     if floorActive then
+        TweenService:Create(floorButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0,255,128)}):Play()
+        floorButton.Text = "3D Floor : ON"
         if not platform and hrp then
             platform = Instance.new("Part")
             platform.Size = Vector3.new(10,1,10)
@@ -105,6 +96,8 @@ floorButton.MouseButton1Click:Connect(function()
             platform.Parent = workspace
         end
     else
+        TweenService:Create(floorButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50,50,50)}):Play()
+        floorButton.Text = "3D Floor : OFF"
         if platform then
             platform:Destroy()
             platform = nil
@@ -112,9 +105,58 @@ floorButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Atualiza posição da plataforma rapidamente
+-- Atualiza posição da plataforma
 RunService.RenderStepped:Connect(function()
     if floorActive and platform and hrp then
         platform.Position = platform.Position:Lerp(hrp.Position - Vector3.new(0,3,0),0.2)
+    end
+end)
+
+-- ===== BOTÃO FLY TO BASE =====
+local flyButton = createToggleButton("Fly to Base", UDim2.new(0,20,0,95))
+local flying = false
+local moveDirection = Vector3.new(0,0,0)
+local flySpeed = 27
+
+-- Captura de teclas W/S
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.W then
+        moveDirection = Vector3.new(0,1,0)
+    elseif input.KeyCode == Enum.KeyCode.S then
+        moveDirection = Vector3.new(0,-1,0)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.W or input.KeyCode == Enum.KeyCode.S then
+        moveDirection = Vector3.new(0,0,0)
+    end
+end)
+
+flyButton.MouseButton1Click:Connect(function()
+    flying = not flying
+    if flying then
+        flyButton.Text = "Fly to Base : ON"
+        TweenService:Create(flyButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0,255,128)}):Play()
+        RunService:BindToRenderStep("FlyStep", Enum.RenderPriority.Camera.Value + 1, function()
+            if hrp and workspace.CurrentCamera then
+                local cam = workspace.CurrentCamera
+                local look = cam.CFrame.LookVector
+                local direction = (look + moveDirection)
+                if direction.Magnitude > 0 then
+                    hrp.Velocity = direction.Unit * flySpeed
+                else
+                    hrp.Velocity = Vector3.new(0,0,0)
+                end
+            end
+        end)
+    else
+        flyButton.Text = "Fly to Base : OFF"
+        TweenService:Create(flyButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50,50,50)}):Play()
+        RunService:UnbindFromRenderStep("FlyStep")
+        if hrp then
+            hrp.Velocity = Vector3.new(0,0,0)
+        end
     end
 end)
