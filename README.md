@@ -2,16 +2,17 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
 
 player.CharacterAdded:Connect(function(char)
 	character = char
 	hrp = char:WaitForChild("HumanoidRootPart")
+	humanoid = char:WaitForChild("Humanoid")
 end)
 
 -- // GUI
@@ -20,48 +21,55 @@ gui.Name = "CaioHub"
 gui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 200, 0, 150)
-frame.Position = UDim2.new(0.05, 0, 0.4, 0)
-frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+frame.Size = UDim2.new(0, 250, 0, 220)
+frame.Position = UDim2.new(0.05, 0, 0.35, 0)
+frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 frame.Active = true
 frame.Draggable = true
 
+-- Borda amarela
+local border = Instance.new("UIStroke", frame)
+border.Thickness = 2
+border.Color = Color3.fromRGB(255,255,0)
+border.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
 local uiCorner = Instance.new("UICorner", frame)
-uiCorner.CornerRadius = UDim.new(0, 12)
+uiCorner.CornerRadius = UDim.new(0,15)
 
 local title = Instance.new("TextLabel", frame)
-title.Text = "Caio Hub"
-title.Size = UDim2.new(1, 0, 0, 30)
+title.Text = "Caio_Hub (V1)"
+title.Size = UDim2.new(1,0,0,35)
 title.BackgroundTransparency = 1
-title.TextColor3 = Color3.fromRGB(255,255,255)
+title.TextColor3 = Color3.fromRGB(255,255,0)
 title.Font = Enum.Font.GothamBold
-title.TextSize = 18
+title.TextSize = 20
+title.TextStrokeTransparency = 0.7
 
 -- // BOTÃO CREATOR
 local function createButton(name, y)
 	local btn = Instance.new("TextButton", frame)
-	btn.Size = UDim2.new(0, 160, 0, 35)
-	btn.Position = UDim2.new(0, 20, 0, y)
+	btn.Size = UDim2.new(0, 200, 0, 40)
+	btn.Position = UDim2.new(0, 25, 0, y)
 	btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
 	btn.Text = name .. " : OFF"
 	btn.TextColor3 = Color3.fromRGB(255,255,255)
 	btn.Font = Enum.Font.GothamBold
-	btn.TextSize = 14
+	btn.TextSize = 16
 	local corner = Instance.new("UICorner", btn)
-	corner.CornerRadius = UDim.new(0,8)
+	corner.CornerRadius = UDim.new(0,10)
 	return btn
 end
 
 -- // BOTÕES
-local floorBtn = createButton("3D Floor", 40)
-local flyBtn = createButton("Fly", 85)
+local floorBtn = createButton("3D Floor", 50)
+local flyBtn = createButton("Fly V2", 110)
+local markBtn = createButton("Mark Pos", 170)
 
 -----------------------------------------------
--- BOTÃO 1: 3D FLOOR (PLATAFORMA + RAIO-X TEMPORÁRIO)
+-- BOTÃO 1: 3D FLOOR (PLATAFORMA + RAIO-X)
 -----------------------------------------------
 local floorActive = false
 local platform
-
 local originalTransparencies = {}
 local originalFogEnd = Lighting.FogEnd
 
@@ -121,30 +129,68 @@ floorBtn.MouseButton1Click:Connect(function()
 end)
 
 -----------------------------------------------
--- BOTÃO 2: FLY (DIREÇÃO DA CÂMERA)
+-- BOTÃO 3: MARCAR POSIÇÃO ÚNICA
+-----------------------------------------------
+local markedPosition = nil
+markBtn.MouseButton1Click:Connect(function()
+	if not markedPosition then
+		if hrp then
+			markedPosition = hrp.Position
+			markBtn.Text = "Mark Pos : SET"
+			markBtn.BackgroundColor3 = Color3.fromRGB(0,255,128)
+		end
+	else
+		markedPosition = nil
+		markBtn.Text = "Mark Pos : OFF"
+		markBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+	end
+end)
+
+-----------------------------------------------
+-- BOTÃO 2: FLY V2 (FLUTUA ATÉ A POSIÇÃO)
 -----------------------------------------------
 local flying = false
-local flySpeed = 25  -- VELOCIDADE ATUALIZADA
+local flySpeed = 20 -- velocidade atualizada
 
 flyBtn.MouseButton1Click:Connect(function()
 	flying = not flying
 	if flying then
-		flyBtn.Text = "Fly : ON"
+		flyBtn.Text = "Fly V2 : ON"
 		flyBtn.BackgroundColor3 = Color3.fromRGB(0,255,128)
 
-		RunService:BindToRenderStep("FlyCam", Enum.RenderPriority.Camera.Value + 1, function()
-			if hrp and workspace.CurrentCamera then
-				local cam = workspace.CurrentCamera
-				local dir = cam.CFrame.LookVector
-				if dir.Magnitude > 0 then
-					hrp.Velocity = dir.Unit * flySpeed
-				end
+		RunService:BindToRenderStep("FlyV2", Enum.RenderPriority.Character.Value + 1, function()
+			if hrp and markedPosition then
+				pcall(function()
+					local direction = (markedPosition - hrp.Position)
+					local distance = direction.Magnitude
+					if distance > 0.5 then
+						-- Flutuação: suaviza Y para não cair abruptamente
+						local targetPos = Vector3.new(markedPosition.X, hrp.Position.Y + direction.Y*0.1, markedPosition.Z)
+						local moveDir = (targetPos - hrp.Position).Unit
+						hrp.Velocity = moveDir * flySpeed
+					else
+						hrp.Velocity = Vector3.zero
+					end
+				end)
+			else
+				hrp.Velocity = Vector3.zero
 			end
 		end)
 	else
-		flyBtn.Text = "Fly : OFF"
+		flyBtn.Text = "Fly V2 : OFF"
 		flyBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-		RunService:UnbindFromRenderStep("FlyCam")
+		RunService:UnbindFromRenderStep("FlyV2")
 		if hrp then hrp.Velocity = Vector3.zero end
 	end
+end)
+
+-----------------------------------------------
+-- ANTI-BUG / ANTI-KICK / ANTI-BACK
+-----------------------------------------------
+RunService.RenderStepped:Connect(function()
+	pcall(function()
+		if hrp and hrp.Position.Y < -50 then
+			hrp.CFrame = CFrame.new(markedPosition or Vector3.new(0,10,0))
+		end
+	end)
 end)
