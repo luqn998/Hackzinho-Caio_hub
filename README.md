@@ -2,6 +2,7 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer
@@ -21,7 +22,7 @@ gui.Name = "CaioHub"
 gui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 250, 0, 220)
+frame.Size = UDim2.new(0, 250, 0, 150)
 frame.Position = UDim2.new(0.05, 0, 0.35, 0)
 frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 frame.Active = true
@@ -63,7 +64,6 @@ end
 -- // BOTÕES
 local floorBtn = createButton("3D Floor", 50)
 local flyBtn = createButton("Fly V2", 110)
-local markBtn = createButton("Mark Pos", 170)
 
 -----------------------------------------------
 -- BOTÃO 1: 3D FLOOR (PLATAFORMA + RAIO-X)
@@ -129,28 +129,10 @@ floorBtn.MouseButton1Click:Connect(function()
 end)
 
 -----------------------------------------------
--- BOTÃO 3: MARCAR POSIÇÃO ÚNICA
------------------------------------------------
-local markedPosition = nil
-markBtn.MouseButton1Click:Connect(function()
-	if not markedPosition then
-		if hrp then
-			markedPosition = hrp.Position
-			markBtn.Text = "Mark Pos : SET"
-			markBtn.BackgroundColor3 = Color3.fromRGB(0,255,128)
-		end
-	else
-		markedPosition = nil
-		markBtn.Text = "Mark Pos : OFF"
-		markBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-	end
-end)
-
------------------------------------------------
--- BOTÃO 2: FLY V2 (FLUTUA ATÉ A POSIÇÃO)
+-- BOTÃO 2: FLY V2 (VAI ONDE VOCÊ OLHA)
 -----------------------------------------------
 local flying = false
-local flySpeed = 20 -- velocidade atualizada
+local flySpeed = 25
 
 flyBtn.MouseButton1Click:Connect(function()
 	flying = not flying
@@ -159,21 +141,10 @@ flyBtn.MouseButton1Click:Connect(function()
 		flyBtn.BackgroundColor3 = Color3.fromRGB(0,255,128)
 
 		RunService:BindToRenderStep("FlyV2", Enum.RenderPriority.Character.Value + 1, function()
-			if hrp and markedPosition then
-				pcall(function()
-					local direction = (markedPosition - hrp.Position)
-					local distance = direction.Magnitude
-					if distance > 0.5 then
-						-- Flutuação: suaviza Y para não cair abruptamente
-						local targetPos = Vector3.new(markedPosition.X, hrp.Position.Y + direction.Y*0.1, markedPosition.Z)
-						local moveDir = (targetPos - hrp.Position).Unit
-						hrp.Velocity = moveDir * flySpeed
-					else
-						hrp.Velocity = Vector3.zero
-					end
-				end)
-			else
-				hrp.Velocity = Vector3.zero
+			if hrp then
+				local cam = workspace.CurrentCamera
+				local dir = cam.CFrame.LookVector
+				hrp.Velocity = dir * flySpeed
 			end
 		end)
 	else
@@ -190,7 +161,7 @@ end)
 RunService.RenderStepped:Connect(function()
 	pcall(function()
 		if hrp and hrp.Position.Y < -50 then
-			hrp.CFrame = CFrame.new(markedPosition or Vector3.new(0,10,0))
+			hrp.CFrame = CFrame.new(Vector3.new(0,10,0))
 		end
 	end)
 end)
