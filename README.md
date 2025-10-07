@@ -24,7 +24,7 @@ local floatActive = false
 local autoActive = false
 local flySpeed = 24
 local floatSpeed = 20
-local autoSpeed = 26.33
+local autoSpeed = 24
 local originalGravity = workspace.Gravity
 local platform
 local originalTransparencies = {}
@@ -192,11 +192,11 @@ end)
 -------------------------------------------------
 markBtn.MouseButton1Click:Connect(function()
 	markedPosition = hrp.Position
-	markBtn.Visible = false -- some depois de marcar
+	markBtn.Visible = false
 end)
 
 -------------------------------------------------
--- // AUTO STEAL (vai para posição marcada)
+-- // AUTO STEAL
 -------------------------------------------------
 autoBtn.MouseButton1Click:Connect(function()
 	if not markedPosition then return end
