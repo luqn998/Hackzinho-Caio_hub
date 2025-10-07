@@ -2,7 +2,6 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer
@@ -17,6 +16,22 @@ player.CharacterAdded:Connect(function(char)
 end)
 
 -------------------------------------------------
+-- // VARIÁVEIS
+-------------------------------------------------
+local floorActive = false
+local flying = false
+local floatActive = false
+local autoActive = false
+local flySpeed = 24
+local floatSpeed = 20
+local autoSpeed = 26.33
+local originalGravity = workspace.Gravity
+local platform
+local originalTransparencies = {}
+local originalFogEnd = Lighting.FogEnd
+local markedPosition = nil
+
+-------------------------------------------------
 -- // GUI PRINCIPAL
 -------------------------------------------------
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
@@ -24,28 +39,26 @@ gui.Name = "CaioHub"
 gui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 260, 0, 200)
+frame.Size = UDim2.new(0, 260, 0, 340)
 frame.Position = UDim2.new(0.05, 0, 0.35, 0)
-frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 frame.Active = true
 frame.Draggable = true
 
 local stroke = Instance.new("UIStroke", frame)
-stroke.Thickness = 2
-stroke.Color = Color3.fromRGB(255,255,0)
-stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+stroke.Thickness = 3
+stroke.Color = Color3.fromRGB(0, 128, 255)
 
 local corner = Instance.new("UICorner", frame)
-corner.CornerRadius = UDim.new(0,14)
+corner.CornerRadius = UDim.new(0, 14)
 
 local title = Instance.new("TextLabel", frame)
-title.Text = "☀️ Caio_Hub (V1)"
-title.Size = UDim2.new(1,0,0,35)
+title.Text = "Caio_Hub (V3)"
+title.Size = UDim2.new(1, 0, 0, 35)
 title.BackgroundTransparency = 1
-title.TextColor3 = Color3.fromRGB(255,255,0)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 20
-title.TextStrokeTransparency = 1
+title.TextColor3 = Color3.fromRGB(100, 180, 255)
+title.Font = Enum.Font.Arcade
+title.TextSize = 22
 
 -------------------------------------------------
 -- // FUNÇÃO PARA CRIAR BOTÕES
@@ -54,39 +67,31 @@ local function createButton(name, posY)
 	local btn = Instance.new("TextButton", frame)
 	btn.Size = UDim2.new(0, 210, 0, 40)
 	btn.Position = UDim2.new(0, 25, 0, posY)
-	btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+	btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 	btn.Text = name .. " : OFF"
-	btn.TextColor3 = Color3.fromRGB(255,255,255)
-	btn.Font = Enum.Font.GothamBold
+	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btn.Font = Enum.Font.Arcade
 	btn.TextSize = 16
 	local c = Instance.new("UICorner", btn)
-	c.CornerRadius = UDim.new(0,10)
+	c.CornerRadius = UDim.new(0, 10)
 	return btn
 end
 
 -- BOTÕES
-local floorBtn = createButton("3D Floor", 60)
-local flyBtn   = createButton("Fly V2", 120)
+local floorBtn = createButton("3rd Floor", 50)
+local flyBtn = createButton("Fly to Base", 100)
+local floatBtn = createButton("Float UP", 150)
+local autoBtn = createButton("Auto Steal", 200)
+local markBtn = createButton("Mark Position", 250)
 
 -------------------------------------------------
--- // VARIÁVEIS
--------------------------------------------------
-local floorActive = false
-local flying = false
-local flySpeed = 24
-local originalGravity = workspace.Gravity
-local platform
-local originalTransparencies = {}
-local originalFogEnd = Lighting.FogEnd
-
--------------------------------------------------
--- // 3D FLOOR
+-- // 3RD FLOOR
 -------------------------------------------------
 local function applyXray()
 	for _, obj in ipairs(workspace:GetDescendants()) do
 		if obj:IsA("BasePart") then
 			originalTransparencies[obj] = obj.Transparency
-			obj.Transparency = math.clamp(obj.Transparency + 0.7,0,1)
+			obj.Transparency = math.clamp(obj.Transparency + 0.7, 0, 1)
 		end
 	end
 	Lighting.FogEnd = 999999
@@ -105,16 +110,16 @@ end
 floorBtn.MouseButton1Click:Connect(function()
 	floorActive = not floorActive
 	if floorActive then
-		floorBtn.Text = "3D Floor : ON"
-		floorBtn.BackgroundColor3 = Color3.fromRGB(0,255,128)
+		floorBtn.Text = "3rd Floor : ON"
+		floorBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
 		applyXray()
 
 		if not platform then
 			platform = Instance.new("Part")
-			platform.Size = Vector3.new(20,1,20)
+			platform.Size = Vector3.new(20, 1, 20)
 			platform.Anchored = true
 			platform.Material = Enum.Material.Neon
-			platform.Color = Color3.fromRGB(80,80,80)
+			platform.Color = Color3.fromRGB(80, 80, 80)
 			platform.Transparency = 0.3
 			platform.Name = "FloorPlatform"
 			platform.Parent = workspace
@@ -122,45 +127,110 @@ floorBtn.MouseButton1Click:Connect(function()
 
 		RunService.RenderStepped:Connect(function()
 			if platform and hrp and floorActive then
-				platform.CFrame = hrp.CFrame * CFrame.new(0,-4,0)
+				platform.CFrame = hrp.CFrame * CFrame.new(0, -4, 0)
 			end
 		end)
 	else
-		floorBtn.Text = "3D Floor : OFF"
-		floorBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-		if platform then platform:Destroy() platform = nil end
+		floorBtn.Text = "3rd Floor : OFF"
+		floorBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+		if platform then
+			platform:Destroy()
+			platform = nil
+		end
 		removeXray()
 	end
 end)
 
 -------------------------------------------------
--- // FLY V2 (VAI ONDE OLHA)
+-- // FLY TO BASE
 -------------------------------------------------
 flyBtn.MouseButton1Click:Connect(function()
 	flying = not flying
 	if flying then
-		flyBtn.Text = "Fly V2 : ON"
-		flyBtn.BackgroundColor3 = Color3.fromRGB(0,255,128)
+		flyBtn.Text = "Fly to Base : ON"
+		flyBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
 		workspace.Gravity = 0
-
-		RunService:BindToRenderStep("FlyFree", Enum.RenderPriority.Character.Value + 1, function()
+		RunService:BindToRenderStep("FlyBase", Enum.RenderPriority.Character.Value + 1, function()
 			if hrp and flying then
-				local cam = workspace.CurrentCamera
-				local dir = cam.CFrame.LookVector
+				local dir = workspace.CurrentCamera.CFrame.LookVector
 				hrp.Velocity = dir * flySpeed
 			end
 		end)
 	else
-		flyBtn.Text = "Fly V2 : OFF"
-		flyBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-		RunService:UnbindFromRenderStep("FlyFree")
+		flyBtn.Text = "Fly to Base : OFF"
+		flyBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+		RunService:UnbindFromRenderStep("FlyBase")
 		workspace.Gravity = originalGravity
 		if hrp then hrp.Velocity = Vector3.zero end
 	end
 end)
 
 -------------------------------------------------
--- // ANTI-BUG / SEGURANÇA
+-- // FLOAT UP
+-------------------------------------------------
+floatBtn.MouseButton1Click:Connect(function()
+	floatActive = not floatActive
+	if floatActive then
+		floatBtn.Text = "Float UP : ON"
+		floatBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
+
+		RunService:BindToRenderStep("FloatUP", Enum.RenderPriority.Character.Value + 2, function()
+			if hrp and floatActive then
+				hrp.Velocity = Vector3.new(0, floatSpeed, 0)
+			end
+		end)
+	else
+		floatBtn.Text = "Float UP : OFF"
+		floatBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+		RunService:UnbindFromRenderStep("FloatUP")
+		if hrp then hrp.Velocity = Vector3.zero end
+	end
+end)
+
+-------------------------------------------------
+-- // MARK POSITION
+-------------------------------------------------
+markBtn.MouseButton1Click:Connect(function()
+	markedPosition = hrp.Position
+	markBtn.Visible = false -- some depois de marcar
+end)
+
+-------------------------------------------------
+-- // AUTO STEAL (vai para posição marcada)
+-------------------------------------------------
+autoBtn.MouseButton1Click:Connect(function()
+	if not markedPosition then return end
+	autoActive = not autoActive
+	if autoActive then
+		autoBtn.Text = "Auto Steal : ON"
+		autoBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
+		workspace.Gravity = 0
+
+		RunService:BindToRenderStep("AutoSteal", Enum.RenderPriority.Character.Value + 3, function()
+			if hrp and autoActive then
+				local direction = (markedPosition - hrp.Position).Unit
+				hrp.Velocity = direction * autoSpeed
+
+				if (hrp.Position - markedPosition).Magnitude < 2 then
+					workspace.Gravity = originalGravity
+					autoActive = false
+					autoBtn.Text = "Auto Steal : OFF"
+					autoBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+					RunService:UnbindFromRenderStep("AutoSteal")
+				end
+			end
+		end)
+	else
+		autoBtn.Text = "Auto Steal : OFF"
+		autoBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+		RunService:UnbindFromRenderStep("AutoSteal")
+		workspace.Gravity = originalGravity
+		if hrp then hrp.Velocity = Vector3.zero end
+	end
+end)
+
+-------------------------------------------------
+-- // SEGURANÇA / ANTI-BUG
 -------------------------------------------------
 RunService.RenderStepped:Connect(function()
 	pcall(function()
