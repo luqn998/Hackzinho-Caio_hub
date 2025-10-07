@@ -24,7 +24,7 @@ gui.Name = "CaioHub"
 gui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 260, 0, 250)
+frame.Size = UDim2.new(0, 260, 0, 200)
 frame.Position = UDim2.new(0.05, 0, 0.35, 0)
 frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
 frame.Active = true
@@ -48,7 +48,7 @@ title.TextSize = 20
 title.TextStrokeTransparency = 1
 
 -------------------------------------------------
--- // CRIAR BOTÕES
+-- // FUNÇÃO PARA CRIAR BOTÕES
 -------------------------------------------------
 local function createButton(name, posY)
 	local btn = Instance.new("TextButton", frame)
@@ -65,26 +65,23 @@ local function createButton(name, posY)
 end
 
 -- BOTÕES
-local floorBtn = createButton("3D Floor", 50)
-local flyBtn   = createButton("Fly V2", 100)
-local markBtn  = createButton("Marcar Posição", 150)
+local floorBtn = createButton("3D Floor", 60)
+local flyBtn   = createButton("Fly V2", 120)
 
 -------------------------------------------------
 -- // VARIÁVEIS
 -------------------------------------------------
+local floorActive = false
 local flying = false
 local flySpeed = 24
-local markedPos = nil
 local originalGravity = workspace.Gravity
-
--------------------------------------------------
--- // BOTÃO 1: 3D FLOOR
--------------------------------------------------
-local floorActive = false
 local platform
 local originalTransparencies = {}
 local originalFogEnd = Lighting.FogEnd
 
+-------------------------------------------------
+-- // 3D FLOOR
+-------------------------------------------------
 local function applyXray()
 	for _, obj in ipairs(workspace:GetDescendants()) do
 		if obj:IsA("BasePart") then
@@ -137,62 +134,22 @@ floorBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------
--- // BOTÃO 2: MARCAR POSIÇÃO
--------------------------------------------------
-markBtn.MouseButton1Click:Connect(function()
-	if hrp then
-		markedPos = hrp.Position
-		markBtn.Text = "Marcar Posição ✅"
-		markBtn.BackgroundColor3 = Color3.fromRGB(0,255,128)
-		task.wait(1)
-		markBtn.Text = "Marcar Posição"
-		markBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-	end
-end)
-
--------------------------------------------------
--- // BOTÃO 3: FLY V2 (IR ATÉ POSIÇÃO)
+-- // FLY V2 (VAI ONDE OLHA)
 -------------------------------------------------
 flyBtn.MouseButton1Click:Connect(function()
 	flying = not flying
-
 	if flying then
 		flyBtn.Text = "Fly V2 : ON"
 		flyBtn.BackgroundColor3 = Color3.fromRGB(0,255,128)
+		workspace.Gravity = 0
 
-		if markedPos then
-			-- Remove gravidade e começa voo
-			workspace.Gravity = 0
-			local connection
-			connection = RunService.RenderStepped:Connect(function()
-				if hrp and flying then
-					local dir = (markedPos - hrp.Position).Unit
-					hrp.Velocity = dir * flySpeed
-
-					-- Quando chega perto da posição
-					if (hrp.Position - markedPos).Magnitude < 5 then
-						connection:Disconnect()
-						flying = false
-						flyBtn.Text = "Fly V2 : OFF"
-						flyBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-
-						-- Restaura gravidade e deixa cair suavemente
-						workspace.Gravity = originalGravity
-						hrp.Velocity = Vector3.new(0, -10, 0)
-					end
-				end
-			end)
-		else
-			-- Fly livre (sem posição marcada)
-			workspace.Gravity = 0
-			RunService:BindToRenderStep("FlyFree", Enum.RenderPriority.Character.Value + 1, function()
-				if hrp and flying then
-					local cam = workspace.CurrentCamera
-					local dir = cam.CFrame.LookVector
-					hrp.Velocity = dir * flySpeed
-				end
-			end)
-		end
+		RunService:BindToRenderStep("FlyFree", Enum.RenderPriority.Character.Value + 1, function()
+			if hrp and flying then
+				local cam = workspace.CurrentCamera
+				local dir = cam.CFrame.LookVector
+				hrp.Velocity = dir * flySpeed
+			end
+		end)
 	else
 		flyBtn.Text = "Fly V2 : OFF"
 		flyBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
