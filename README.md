@@ -1,4 +1,4 @@
--- Caio_Hub V2.1 - GUI completo sem ícone + Anti Kick e Anti Rejoin Supremo
+-- Caio_Hub V2.1 - GUI completo com ícone arrastável com texto "Caio"
 -- LocalScript dentro de StarterGui ou PlayerGui
 
 -- Serviços
@@ -7,7 +7,6 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local Lighting = game:GetService("Lighting")
 local VirtualUser = game:GetService("VirtualUser")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
@@ -26,21 +25,18 @@ local flySpeed = 24
 local originalGravity = workspace.Gravity
 local originalFogEnd = Lighting.FogEnd
 local state = { float = false, fly = false }
-local modifiedParts = {} -- Para X-Ray
-
+local modifiedParts = {}
 local function clamp(v,a,b) return math.max(a,math.min(b,v)) end
 
 ------------------------------------------------------------
--- 🔒 ANTI KICK FORÇÁVEL + ANTI AFK + ANTI REJOIN SUPREMO
+-- Anti Kick / Anti AFK / Anti Rejoin
 ------------------------------------------------------------
--- Bloqueia Player:Kick()
 pcall(function()
 	if player.Kick then
 		player.Kick = function(...) warn("[Caio_Hub] Kick bloqueado!") end
 	end
 end)
 
--- Bloqueia :Kick() via Namecall
 pcall(function()
 	local mt = getrawmetatable(game)
 	if mt then
@@ -58,7 +54,6 @@ pcall(function()
 	end
 end)
 
--- Anti AFK automático
 spawn(function()
 	while task.wait(60) do
 		pcall(function()
@@ -68,78 +63,128 @@ spawn(function()
 	end
 end)
 
--- Anti Rejoin Supremo
+------------------------------------------------------------
+-- Tela de Apresentação
+------------------------------------------------------------
+local introGui = Instance.new("ScreenGui")
+introGui.Name = "CaioHubIntro"
+introGui.ResetOnSpawn = false
+introGui.Parent = player:WaitForChild("PlayerGui")
+
+local introFrame = Instance.new("Frame")
+introFrame.Size = UDim2.new(1,0,1,0)
+introFrame.BackgroundColor3 = Color3.fromRGB(20,0,30)
+introFrame.Parent = introGui
+
+local introTitle = Instance.new("TextLabel")
+introTitle.Size = UDim2.new(1,0,0,100)
+introTitle.Position = UDim2.new(0,0,0.4,0)
+introTitle.BackgroundTransparency = 1
+introTitle.Text = "🌟 Caio Hub Apresenta 🌟"
+introTitle.Font = Enum.Font.Arcade
+introTitle.TextSize = 38
+introTitle.TextColor3 = Color3.fromRGB(255,200,0)
+introTitle.Parent = introFrame
+
+local glow = Instance.new("UIStroke")
+glow.Thickness = 2
+glow.Color = Color3.fromRGB(255,255,0)
+glow.Transparency = 0.2
+glow.Parent = introTitle
+
+-- Animação pulsante
 spawn(function()
-	while true do
-		task.wait(2)
-		if player.Parent == nil then
-			warn("[Caio_Hub] Tentativa de Rejoin detectada, prevenindo...")
-			-- Força personagem e GUI de volta
-			player:LoadCharacter()
-			screenGui.Parent = player:WaitForChild("PlayerGui")
+	while introGui.Parent do
+		for i=0,1,0.03 do
+			introTitle.TextTransparency = i
+			glow.Transparency = 0.2 + i*0.6
+			task.wait(0.03)
+		end
+		for i=1,0,-0.03 do
+			introTitle.TextTransparency = i
+			glow.Transparency = 0.2 + i*0.6
+			task.wait(0.03)
 		end
 	end
 end)
 
+task.wait(4)
+introGui:Destroy()
+
 ------------------------------------------------------------
--- 🖥 GUI PRINCIPAL
+-- GUI Principal
 ------------------------------------------------------------
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "CaioHubGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
+-- Ícone arrastável com texto "Caio"
+local icon = Instance.new("TextButton")
+icon.Size = UDim2.new(0,100,0,40)
+icon.Position = UDim2.new(0,10,0,50)
+icon.BackgroundColor3 = Color3.fromRGB(50,0,100)
+icon.Text = "Caio"
+icon.TextColor3 = Color3.fromRGB(255,255,255)
+icon.Font = Enum.Font.Arcade
+icon.TextSize = 22
+icon.Parent = screenGui
+
+local iconCorner = Instance.new("UICorner", icon)
+iconCorner.CornerRadius = UDim.new(0,10)
+
+local iconStroke = Instance.new("UIStroke", icon)
+iconStroke.Color = Color3.fromRGB(255,220,0)
+iconStroke.Thickness = 2
+
+-- Menu principal
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0,320,0,300)
-mainFrame.Position = UDim2.new(0.05,0,0.2,0)
-mainFrame.BackgroundColor3 = Color3.fromRGB(18,18,20)
-mainFrame.BorderSizePixel = 0
-mainFrame.Parent = screenGui
+mainFrame.Position = UDim2.new(0,120,0,50)
+mainFrame.BackgroundColor3 = Color3.fromRGB(25,0,40)
+mainFrame.Visible = true
 mainFrame.Active = true
 mainFrame.Draggable = true
+mainFrame.Parent = screenGui
 
 local mainCorner = Instance.new("UICorner", mainFrame)
 mainCorner.CornerRadius = UDim.new(0,18)
 
 local mainStroke = Instance.new("UIStroke", mainFrame)
-mainStroke.Thickness = 3
-mainStroke.Color = Color3.fromRGB(0,128,255)
+mainStroke.Color = Color3.fromRGB(255,220,0)
+mainStroke.Thickness = 4
 
-local title = Instance.new("TextLabel", mainFrame)
-title.Size = UDim2.new(1,-20,0,44)
-title.Position = UDim2.new(0,10,0,8)
-title.BackgroundTransparency = 1
-title.Text = "Caio_Hub (V2.1)"
-title.TextColor3 = Color3.fromRGB(160,210,255)
-title.Font = Enum.Font.Arcade
-title.TextSize = 22
-title.TextXAlignment = Enum.TextXAlignment.Left
+local titleLabel = Instance.new("TextLabel", mainFrame)
+titleLabel.Size = UDim2.new(1,-20,0,44)
+titleLabel.Position = UDim2.new(0,10,0,8)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Caio_Hub (V2.1)"
+titleLabel.TextColor3 = Color3.fromRGB(255,255,150)
+titleLabel.Font = Enum.Font.Arcade
+titleLabel.TextSize = 22
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-------------------------------------------------------------
--- 🔘 Função criar botões
-------------------------------------------------------------
+-- Função para criar botões
 local function createButton(text,y)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(0,280,0,44)
 	btn.Position = UDim2.new(0,20,0,y)
-	btn.BackgroundColor3 = Color3.fromRGB(40,40,44)
+	btn.BackgroundColor3 = Color3.fromRGB(90,0,120)
 	btn.BorderSizePixel = 0
 	btn.Font = Enum.Font.Arcade
 	btn.TextSize = 18
-	btn.TextColor3 = Color3.fromRGB(230,230,230)
+	btn.TextColor3 = Color3.fromRGB(255,255,255)
 	btn.Text = text.." : OFF"
 	local uc = Instance.new("UICorner", btn)
 	uc.CornerRadius = UDim.new(0,10)
 	local stroke = Instance.new("UIStroke", btn)
 	stroke.Thickness = 1
-	stroke.Color = Color3.fromRGB(80,140,255)
+	stroke.Color = Color3.fromRGB(255,220,0)
 	stroke.Transparency = 0.4
 	return btn
 end
 
-------------------------------------------------------------
--- 🔩 Cria botões
-------------------------------------------------------------
+-- Botões
 local floatBtn = createButton("Float UP",64)
 local flyBtn = createButton("Fly to Base",120)
 local privadoBtn = createButton("Privado Server (OP)",176)
@@ -148,16 +193,17 @@ floatBtn.Parent = mainFrame
 flyBtn.Parent = mainFrame
 privadoBtn.Parent = mainFrame
 
-------------------------------------------------------------
--- ⚡ Funções dos botões
-------------------------------------------------------------
--- Float UP com X-ray
+-- Abrir/fechar menu ao clicar no ícone
+icon.MouseButton1Click:Connect(function()
+	mainFrame.Visible = not mainFrame.Visible
+end)
+
+-- Funções dos botões
 floatBtn.MouseButton1Click:Connect(function()
 	state.float = not state.float
 	if state.float then
 		floatBtn.Text = "Float UP : ON"
-		floatBtn.BackgroundColor3 = Color3.fromRGB(0,255,128)
-		-- X-Ray
+		floatBtn.BackgroundColor3 = Color3.fromRGB(0,255,0)
 		modifiedParts = {}
 		for _, obj in ipairs(Workspace:GetDescendants()) do
 			if obj:IsA("BasePart") then
@@ -173,8 +219,7 @@ floatBtn.MouseButton1Click:Connect(function()
 		end)
 	else
 		floatBtn.Text = "Float UP : OFF"
-		floatBtn.BackgroundColor3 = Color3.fromRGB(40,40,44)
-		-- Remove X-ray
+		floatBtn.BackgroundColor3 = Color3.fromRGB(90,0,120)
 		for _, data in ipairs(modifiedParts) do
 			if data.part then data.part.Transparency = data.originalTransparency end
 		end
@@ -184,12 +229,11 @@ floatBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Fly to Base
 flyBtn.MouseButton1Click:Connect(function()
 	state.fly = not state.fly
 	if state.fly then
 		flyBtn.Text = "Fly to Base : ON"
-		flyBtn.BackgroundColor3 = Color3.fromRGB(0,255,128)
+		flyBtn.BackgroundColor3 = Color3.fromRGB(0,255,0)
 		workspace.Gravity = 0
 		RunService:BindToRenderStep("FlyCamera",Enum.RenderPriority.Character.Value+1,function()
 			if hrp and state.fly then
@@ -200,25 +244,22 @@ flyBtn.MouseButton1Click:Connect(function()
 		end)
 	else
 		flyBtn.Text = "Fly to Base : OFF"
-		flyBtn.BackgroundColor3 = Color3.fromRGB(40,40,44)
+		flyBtn.BackgroundColor3 = Color3.fromRGB(90,0,120)
 		RunService:UnbindFromRenderStep("FlyCamera")
 		workspace.Gravity = originalGravity
 		if hrp then hrp.Velocity = Vector3.zero end
 	end
 end)
 
--- Privado Server (OP)
 privadoBtn.MouseButton1Click:Connect(function()
 	privadoBtn.Text = "Executando..."
-	privadoBtn.BackgroundColor3 = Color3.fromRGB(0,255,128)
+	privadoBtn.BackgroundColor3 = Color3.fromRGB(0,255,0)
 	task.wait(0.5)
 	pcall(function()
 		loadstring(game:HttpGet("https://pastebin.com/raw/Ru4UQDpN"))()
 	end)
-	privadoBtn.Text = "Privado Server (OP) : OK"
-	task.wait(1)
 	privadoBtn.Text = "Privado Server (OP)"
-	privadoBtn.BackgroundColor3 = Color3.fromRGB(40,40,44)
+	privadoBtn.BackgroundColor3 = Color3.fromRGB(90,0,120)
 end)
 
 -- Anti bug: não cair abaixo do mapa
