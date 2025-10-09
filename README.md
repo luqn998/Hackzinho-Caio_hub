@@ -1,4 +1,4 @@
--- Caio_Hub V2.1 - GUI completo sem ícone + Anti Kick forçável
+-- Caio_Hub V2.1 - GUI completo sem ícone + Anti Kick e Anti Rejoin Supremo
 -- LocalScript dentro de StarterGui ou PlayerGui
 
 -- Serviços
@@ -7,6 +7,7 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local Lighting = game:GetService("Lighting")
 local VirtualUser = game:GetService("VirtualUser")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
@@ -30,7 +31,7 @@ local modifiedParts = {} -- Para X-Ray
 local function clamp(v,a,b) return math.max(a,math.min(b,v)) end
 
 ------------------------------------------------------------
--- 🔒 ANTI KICK FORÇÁVEL + ANTI AFK
+-- 🔒 ANTI KICK FORÇÁVEL + ANTI AFK + ANTI REJOIN SUPREMO
 ------------------------------------------------------------
 -- Bloqueia Player:Kick()
 pcall(function()
@@ -64,6 +65,19 @@ spawn(function()
 			VirtualUser:CaptureController()
 			VirtualUser:ClickButton2(Vector2.new())
 		end)
+	end
+end)
+
+-- Anti Rejoin Supremo
+spawn(function()
+	while true do
+		task.wait(2)
+		if player.Parent == nil then
+			warn("[Caio_Hub] Tentativa de Rejoin detectada, prevenindo...")
+			-- Força personagem e GUI de volta
+			player:LoadCharacter()
+			screenGui.Parent = player:WaitForChild("PlayerGui")
+		end
 	end
 end)
 
